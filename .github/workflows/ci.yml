@@ -19,5 +19,8 @@ jobs:
         go-version: ^1.21
       id: go
 
+    - name: Module Initialization
+      run: go mod init github.com/corey888773/golang-course
+
     - name: Test
       run: make test
