@@ -23,7 +23,7 @@ psql:
 	docker exec -it postgres15.4 psql -U root simple_bank
 
 test:
-	go test -v -cover ./...
-
+	go test -v -cover -short ./... -mod=mod
+ 
 .PHONY:
 	postgres createdb dropdb migrateup migratedown sqlc dbstart test psql
