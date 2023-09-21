@@ -6,19 +6,24 @@ import (
 	"fmt"
 )
 
-type Store struct {
+type Store interface {
+	TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error)
+	Querier
+}
+
+type SqlStore struct {
 	*Queries
 	db *sql.DB
 }
 
-func NewStore(db *sql.DB) *Store {
-	return &Store{
+func NewStore(db *sql.DB) Store {
+	return &SqlStore{
 		db:      db,
 		Queries: New(db),
 	}
 }
 
-func (store *Store) execTransaction(ctx context.Context, fn func(*Queries) error) error {
+func (store *SqlStore) execTransaction(ctx context.Context, fn func(*Queries) error) error {
 	tx, err := store.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -53,7 +58,7 @@ type TransferTxResult struct {
 // TransferTx performs a money transfer from one account to the other.
 // It creates a transfer record, and update accounts' balance with new values.
 // If any of the steps fail, it will rollback the transaction and return an error.
-func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error) {
+func (store *SqlStore) TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error) {
 	var result TransferTxResult
 
 	err := store.execTransaction(ctx, func(q *Queries) error {
