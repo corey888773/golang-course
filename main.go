@@ -14,22 +14,25 @@ import (
 func main() {
 	config, err := util.LoadConfig(".")
 	if err != nil {
-		log.Fatal("cannot load config")
+		log.Fatal("cannot load config:")
 	}
 
 	connector, err := pq.NewConnector(config.DbSource)
 	if err != nil {
-		log.Fatal("cannot create connector", err)
+		log.Fatal("cannot create connector:", err)
 	}
 	connection := sql.OpenDB(connector)
 
 	defer connection.Close()
 
 	store := db.NewStore(connection)
-	server := api.NewServer(store)
+	server, err := api.NewServer(store, config)
+	if err != nil {
+		log.Fatal("cannot create server:", err)
+	}
 
 	err = server.Start(config.ServerAdress)
 	if err != nil {
-		log.Fatal("cannot start server", err)
+		log.Fatal("cannot start server:", err)
 	}
 }
