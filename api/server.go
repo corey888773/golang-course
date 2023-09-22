@@ -12,10 +12,10 @@ import (
 )
 
 type Server struct {
-	store  db.Store
-	router *gin.Engine
-	maker  token.Maker
-	config util.Config
+	store      db.Store
+	router     *gin.Engine
+	tokenMaker token.Maker
+	config     util.Config
 }
 
 func NewServer(store db.Store, config util.Config) (*Server, error) {
@@ -25,9 +25,9 @@ func NewServer(store db.Store, config util.Config) (*Server, error) {
 	}
 
 	server := &Server{
-		store:  store,
-		maker:  tokenMaker,
-		config: config,
+		store:      store,
+		tokenMaker: tokenMaker,
+		config:     config,
 	}
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
@@ -40,14 +40,17 @@ func NewServer(store db.Store, config util.Config) (*Server, error) {
 
 func (server *Server) SetupRouter() {
 	router := gin.Default()
-	router.POST("/accounts", server.createAccount)
-	router.GET("/accounts/:id", server.getAccount)
-	router.GET("/accounts", server.listAccounts)
-	router.PATCH("/accounts/:id", server.updateAccount)
-	router.POST("/transfers", server.createTransfer)
+
 	router.POST("/users", server.createUser)
 	router.POST("/users/login", server.loginUser)
 
+	authRoutes := router.Group("/").Use(authenticationMiddleware(server.tokenMaker))
+
+	authRoutes.POST("/accounts", server.createAccount)
+	authRoutes.GET("/accounts/:id", server.getAccount)
+	authRoutes.GET("/accounts", server.listAccounts)
+	authRoutes.PATCH("/accounts/:id", server.updateAccount)
+	authRoutes.POST("/transfers", server.createTransfer)
 	server.router = router
 }
 

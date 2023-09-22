@@ -92,14 +92,14 @@ func TestCreateUserApi(t *testing.T) {
 				"full_name": user.FullName,
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				// arg := db.CreateUserParams{
-				// 	Username:       user.Username,
-				// 	HashedPassword: hashedPassword,
-				// 	FullName:       user.FullName,
-				// 	Email:          user.Email,
-				// }
+				arg := db.CreateUserParams{
+					Username:       user.Username,
+					HashedPassword: password,
+					FullName:       user.FullName,
+					Email:          user.Email,
+				}
 				store.EXPECT().
-					CreateUser(gomock.Any(), gomock.Any()).
+					CreateUser(gomock.Any(), EqCreateUserParams(arg, password)).
 					Times(1).
 					Return(db.User{}, &pq.Error{Code: "23505"})
 			},
@@ -186,7 +186,7 @@ func TestCreateUserApi(t *testing.T) {
 			store := mockdb.NewMockStore(ctrl)
 			tc.buildStubs(store)
 
-			server := NewTestServer(t, store)
+			server := newTestServer(t, store)
 			recorder := httptest.NewRecorder()
 
 			data, err := json.Marshal(tc.body)
