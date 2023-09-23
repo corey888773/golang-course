@@ -1,4 +1,4 @@
-name: Run unit tests
+name: Run build images and deploy to ECR
 
 on:
   push:
