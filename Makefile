@@ -1,5 +1,5 @@
 postgres:
-	docker run --name postgres15.4 -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -e POSTGRES_DB=simple_bank -d postgres:15.4-alpine
+	docker run --name postgres15.4 --network golang-course -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -e POSTGRES_DB=simple_bank -d postgres:15.4-alpine
 
 dbstart:
 	docker start postgres15.4
