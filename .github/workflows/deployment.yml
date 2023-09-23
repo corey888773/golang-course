@@ -1,5 +1,4 @@
-name: Run build images and deploy to ECR
-
+name: Deploy the app code to production
 on:
   push:
     branches: [ "main" ]
@@ -32,6 +31,10 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
         with:
             mask-password: 'true'
+
+      - name: Load secrets and save them in app env file
+        run: | 
+          aws secretsmanager get-secret-value --secret-id simple_bank --query SecretString --output text | jq -r 'to_entries|map("\(.key)=\(.value)")|.[]' > app.env
 
       - name: Build, tag, and push docker image to Amazon ECR
         env:
