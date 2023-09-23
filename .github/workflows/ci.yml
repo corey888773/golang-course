@@ -45,7 +45,8 @@ jobs:
       run: make migrateup
 
     - name: Module Initialization
-      run: go mod init github.com/corey888773/golang-course
-
+      run: |
+          go mod init github.com/corey888773/golang-course
+          go mod tidy
     - name: Test
       run: make test
