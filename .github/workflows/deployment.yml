@@ -7,12 +7,18 @@ on:
 
 jobs:
 
-  Build:
+  Deploy:
     name: "Build images"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
+
+      - name: Install Kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.28.2'
+        id: install 
 
       - name: Initialize Go module
         run: |
@@ -42,5 +48,11 @@ jobs:
             REPOSITORY: simplebank 
             IMAGE_TAG: ${{ github.sha }}
         run: |
-            docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
-            docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+            docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -t latest.
+            docker push -a $REGISTRY/$REPOSITORY
+
+      - name: Deploy image to Amazon EKS
+        run: |
+          kubectl apply -f AWS/eks/aws-auth.yaml
+          kubectl apply -f AWS/eks/deployment.yaml
+          kubectl apply -f AWS/eks/service.yaml
