@@ -1,0 +1,67 @@
+// documentation is available at https://dbdocs.io/piotrdropii4/simple_bank
+// to generate sql file from this you will need to use dbml cli tool. run % dbml2sql --postgres -o doc/schema.sql doc/db.dbml
+
+Project simple_bank {
+    database_type: 'PostgreSQL'
+    Note: '''
+    # Simple Bank Database
+    '''
+}
+
+Table sessions as S {
+  id uuid [primary key]
+  username varchar [not null, ref: > U.username]
+  refresh_token varchar [not null]
+  user_agent varchar [not null]
+  client_ip varchar [not null]
+  is_blocked boolean [not null, default: False]
+  expires_at timestamptz [not null]
+  created_at timestamptz [not null, default: `now()`]
+}
+
+Table users as U {
+  username varchar [primary key]
+  hashed_password varchar [not null]
+  full_name varchar [not null]
+  email varchar [not null, unique]
+  password_changed_at timestamptz [not null, default: '0001-01-01 00:00:00Z']
+  created_at timestamptz [not null, default: `now()`]
+}
+
+Table accounts as A {
+  id bigserial [primary key]
+  owner varchar [ref: > U.username, not null]
+  balance bigint [not null]
+  currency varchar [not null]
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    owner
+    (owner, currency) [unique]
+  }
+}
+
+Table entries {
+  id bigserial [primary key]
+  account_id bigint [ref: > A.id, not null]
+  amount bigint [not null, note: 'It can be either negative or positive']
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    account_id
+  }
+}
+
+Table transfers {
+  id bigserial [primary key]
+  from_account_id bigint [ref: > A.id, not null]
+  to_account_id bigint [ref: > A.id, not null]
+  amount bigint [not null, note: 'Must be positive']
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes{
+    from_account_id
+    to_account_id
+    (from_account_id, to_account_id)
+  }
+}
