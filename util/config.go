@@ -8,7 +8,8 @@ import (
 
 type Config struct {
 	DbSource            string        `mapstructure:"DB_SOURCE"`
-	ServerAdress        string        `mapstructure:"SERVER_ADRESS"`
+	HttpServerAddress   string        `mapstructure:"HTTP_SERVER_ADDRESS"`
+	GrpcServerAddress   string        `mapstructure:"GRPC_SERVER_ADDRESS"`
 	TokenSymmetricKey   string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
 	AccessTokenDuration time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
 	RefreshTokeDuration time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
