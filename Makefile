@@ -31,7 +31,10 @@ psql:
 	docker exec -it postgres15.4 psql -U root simple_bank
 
 test:
-	go test -v -cover -short ./... -mod=mod
+	go test -v -cover -short ./api/...
+	go test -v -cover -short ./gapi/...
+	go test -v -cover -short ./db/...
+	
  
 server:
 	go run main.go
@@ -56,7 +59,10 @@ protoc:
 	statik -src=./doc/swagger -dest=./doc/
 
 evans:
-	evans --host localhost --port 9000 -r repl
+	evans --host localhost --port 9000 --path ./proto/ --proto service_simple_bank.proto
+
+redis:
+	docker run --name redis -p 6379:6379 -d redis:7-alpine
 
 .PHONY:
-	postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 sqlc dbstart test psql server mock dbdocs dbschema protoc evans
+	postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 sqlc dbstart test psql server mock dbdocs dbschema protoc evans redis

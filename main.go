@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/hibiken/asynq"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/corey888773/golang-course/gapi"
 	"github.com/corey888773/golang-course/pb"
 	"github.com/corey888773/golang-course/util"
+	"github.com/corey888773/golang-course/worker"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -48,15 +50,22 @@ func main() {
 	defer connection.Close()
 
 	store := db.NewStore(connection)
-	go runGatewayServer(config, store)
-	runGrpcServer(config, store)
+	redisOpt := asynq.RedisClientOpt{
+		Addr: config.RedisAddress,
+	}
+
+	taskDistributor := worker.NewRedisTaskDistributor(redisOpt)
+
+	go runGatewayServer(config, store, taskDistributor)
+	go runTaskProcessor(redisOpt, store)
+	runGrpcServer(config, store, taskDistributor)
 
 }
 
-func runGrpcServer(config util.Config, store db.Store) {
+func runGrpcServer(config util.Config, store db.Store, taskDistributor worker.TaskDistributor) {
 	grpcLogger := grpc.UnaryInterceptor(gapi.GrpcLogger)
 	grpcServer := grpc.NewServer(grpcLogger)
-	server, err := gapi.NewServer(store, config)
+	server, err := gapi.NewServer(store, config, taskDistributor)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Cannot start server:")
 	}
@@ -75,8 +84,8 @@ func runGrpcServer(config util.Config, store db.Store) {
 	}
 }
 
-func runGatewayServer(config util.Config, store db.Store) {
-	server, err := gapi.NewServer(store, config)
+func runGatewayServer(config util.Config, store db.Store, taskDistributor worker.TaskDistributor) {
+	server, err := gapi.NewServer(store, config, taskDistributor)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Cannot start server:")
 	}
@@ -145,4 +154,15 @@ func runDbMigration(migrationUrl string, dbSource string) {
 	}
 
 	log.Info().Msg("db migrated sucesfuly")
+}
+
+func runTaskProcessor(redisOpt asynq.RedisClientOpt, store db.Store) {
+	taskProcessor := worker.NewRedisTaskProcessor(redisOpt, store)
+
+	err := taskProcessor.Start()
+	if err != nil {
+		log.Fatal().Err(err).Msg("could not start task processor")
+	}
+
+	log.Info().Msg("started task processor")
 }
